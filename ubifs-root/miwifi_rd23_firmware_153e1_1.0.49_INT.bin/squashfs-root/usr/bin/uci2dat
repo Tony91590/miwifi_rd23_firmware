@@ -23,51 +23,85 @@ local ucifile = "/etc/config/wireless"
 
 local SKU_REGION_NORMAL = {
     ["CN"] = {
+        ["country"] = {"CN"},
         ["region"]      = "1",
         ["aregion"]     = "0",
         ["SKUenable"]   = "0"
     },
     ["EU"] = {
+        ["country"] = {"FR", "BE", "CH", "DE", "DK", "ES", "FI", "IE", "IT",
+                        "NL", "NO", "PL", "RU", "SE", "TR", "UA", "PT"
+                      },
         ["region"]      = "1",
-        ["aregion"]     = "1",
+        ["aregion"]     = "6",
         ["SKUenable"]   = "1"
     },
     ["UK"] = {
+        ["country"] = {"GB"},
         ["region"]      = "1",
-        ["aregion"]     = "1",
+        ["aregion"]     = "6",
+        ["SKUenable"]   = "1"
+    },
+    ["AS"] = {
+        ["country"] = {"AE", "HK", "SG", "MY", "KE", "SA", "TH", "VN"},
+        ["region"]      = "1",
+        ["aregion"]     = "10",
         ["SKUenable"]   = "1"
     },
     ["JP"] = {
+        ["country"] = {"JP"},
         ["region"]      = "1",
         ["aregion"]     = "6",
         ["SKUenable"]   = "0"
     },
     ["KR"] = {
+        ["country"] = {"KR"},
         ["region"]      = "1",
         ["aregion"]     = "10",
         ["SKUenable"]   = "0"
     },
     ["US"] = {
+        ["country"] = {"US", "MA", "PE", "CO", "PA", "CR", "PH", "TW"},
         ["region"]      = "0",
-        ["aregion"]     = "7",
+        ["aregion"]     = "10",
         ["SKUenable"]   = "0"
     },
     ["ID"] = {
+        ["country"] = {"ID"},
         ["region"]      = "1",
-        ["aregion"]     = "1",
+        ["aregion"]     = "10",
         ["SKUenable"]   = "0"
     },
     ["IN"] = {
+        ["country"] = {"IN"},
         ["region"]      = "1",
         ["aregion"]     = "10",
         ["SKUenable"]   = "0"
     }
 }
 
+function is_match_country(sku, country_table)
+    if type(country_table) ~= "table" then
+        return false
+    end
+
+    for _,country in pairs(country_table) do
+        if country == sku then
+            return true
+        end
+    end
+
+    return false
+end
+
 function find_sku_info(sku, table_info)
     for k, v in pairs(table_info) do
         if k == sku then
             return v
+        else
+            if is_match_country(sku, v["country"]) then
+                return v
+            end
         end
     end
     return nil
@@ -841,16 +875,6 @@ function uci2dat(ucifile, datfile, devname)
     if not devname then error("devname not specified!") return end
     if devname then devname = devname:gsub("%.", "_") end
 
-    local rsfile = io.popen("bdata get CountryCode")
-    local BD_CountryCode = rsfile:read("*all")
-    BD_CountryCode = __trim(BD_CountryCode)
-    rsfile:close()
-
-    local rsfile = io.popen("nvram get CountryCode")
-    local NV_CountryCode = rsfile:read("*all")
-    NV_CountryCode = __trim(NV_CountryCode)
-    rsfile:close()
-
     local ucicfg = uci.decode(ucifile)
     if not ucicfg then error("unable to decode "..ucifile) return end
 
@@ -1101,27 +1125,11 @@ function uci2dat(ucifile, datfile, devname)
             end
         end
 
-        local sku_test = find_sku_info(BD_CountryCode, SKU_REGION_NORMAL)
+        local sku_test = find_sku_info(devscfg.CountryCode, SKU_REGION_NORMAL)
         if sku_test then
             devscfg.CountryRegion = sku_test["region"]
             devscfg.CountryRegionABand = sku_test["aregion"]
             devscfg.SKUenable = sku_test["SKUenable"]
-
-            if BD_CountryCode == "EU" or BD_CountryCode == "UK" then
-                devscfg.SkuTableIdx = 1
-            elseif BD_CountryCode == "US" then
-                devscfg.SkuTableIdx = 2
-            elseif BD_CountryCode == "ID" then
-                devscfg.SkuTableIdx = 3
-            else
-                devscfg.SkuTableIdx = 0
-            end
-
-            --Special power customization
-            local skuidx = UCI:get("power_specialized", BD_CountryCode, NV_CountryCode)
-            if tonumber(skuidx) ~= nil then
-                devscfg.SkuTableIdx = tonumber(skuidx)
-            end
         end
 
         if devscfg.SKUenable == "1" and devscfg.MUTxRxEnable == 1 then
