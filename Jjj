@@ -1,0 +1,42 @@
+#!/bin/sh
+
+FIRMWARE="/tmp/firmware_ubi.bin"
+
+get_mtd_device() {
+    grep -w "\"$1\"" /proc/mtd | awk -F: '{print $1}'
+}
+
+if [ ! -f "$FIRMWARE" ]; then
+    echo "Firmware introuvable dans /tmp"
+    exit 1
+fi
+
+# lecture du slot actif
+os_idx=$(nvram get flag_boot_rootfs)
+
+if [ "${os_idx:-1}" -eq 0 ]; then
+    PART="ubi1"
+else
+    PART="ubi"
+fi
+
+MTD_DEV=$(get_mtd_device "$PART")
+
+if [ -z "$MTD_DEV" ]; then
+    echo "Partition MTD introuvable ($PART)"
+    exit 1
+fi
+
+echo "Flash de $FIRMWARE vers /dev/$MTD_DEV ..."
+
+# écriture brute de l'image UBI
+mtd write "$FIRMWARE" "/dev/$MTD_DEV"
+
+if [ $? -eq 0 ]; then
+    echo "Flash OK"
+    sync
+    reboot
+else
+    echo "Erreur flash"
+    exit 1
+fi
