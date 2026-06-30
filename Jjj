@@ -35,6 +35,10 @@ mtd write "$FIRMWARE" "/dev/$MTD_DEV"
 if [ $? -eq 0 ]; then
     echo "Flash OK"
     sync
+
+    nvram set flag_ota_reboot=1
+    nvram commit
+
     reboot
 else
     echo "Erreur flash"
