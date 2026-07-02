@@ -277,7 +277,7 @@ function mtk_wifi_detect()
 	-- default AutoChannelSkipList for 5G
 	-- no DFS channel to avoid CCA
 	-- no CH165 because it has only 20M bandwidth
-	local AutoChannelSkipList_5G = "52;56;60;64;100;104;108;112;116;120;124;128;132;136;140;165"
+	local AutoChannelSkipList_5G = "132;136;140;165"
 
 	-- do CountryCode specific configuration
 	if CountryCode == "KR" then
