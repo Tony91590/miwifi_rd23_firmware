@@ -967,9 +967,9 @@ function uci2dat(ucifile, datfile, devname)
                 if v == "max" then
                     devscfg.TxPower = 100
                 elseif v == "mid" then
-                    devscfg.TxPower = 75
-                elseif v == "min" then
                     devscfg.TxPower = 50
+                elseif v == "min" then
+                    devscfg.TxPower = 25
                 end
             elseif k == "ax" then   -- OFDMA, TWT, BSS color
                 local uci = require("luci.model.uci").cursor()
